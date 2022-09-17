@@ -8,16 +8,21 @@
 import UIKit
 import FirebaseAuth
 import JGProgressHUD
+import UserNotifications
 
 /// Controller that shows list of coversations
 final class ConversationsViewController: UIViewController {
+    
+    let notificationCenter = UNUserNotificationCenter.current()
     
     private let spinner = JGProgressHUD(style: .dark)
     
     private var conversations = [Conversation]()
     
+    private var users = [SearchResultUser]()
+    
     private let tableView: UITableView = {
-        let table = UITableView()
+        let table = UITableView(frame: .zero, style: .grouped)
         table.isHidden = true
         table.register(ConversationTableViewCell.self, forCellReuseIdentifier: ConversationTableViewCell.identifier)
         return table
@@ -38,11 +43,17 @@ final class ConversationsViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
+        navigationController?.addCustomBottomLine(color: .systemGray5, height: 1)
         navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .compose, target: self, action: #selector(didTapComposeButton))
+        navigationItem.rightBarButtonItem?.tintColor = UIColor.chatAppColor
+        
+        tableView.separatorStyle = .none
+        tableView.register(ConversationsTableHeaderView.self, forHeaderFooterViewReuseIdentifier: "header")
         
         view.addSubview(tableView)
         view.addSubview(noConversationLabel)
         setupTableView()
+        getAllUsers()
         startListeningForConversations()
         
         loginObserver = NotificationCenter.default.addObserver(forName: .didLoginNotification, object: nil, queue: .main, using: { [weak self] _ in
@@ -50,10 +61,70 @@ final class ConversationsViewController: UIViewController {
                 return
             }
            
+            strongSelf.getAllUsers()
             strongSelf.startListeningForConversations()
         })
     }
     
+    private func pushNotification(title: String, message: String) {
+        
+        self.notificationCenter.getNotificationSettings { [weak self] settings in
+            
+            DispatchQueue.main.async {
+                
+                if settings.authorizationStatus == .authorized {
+                    let content = UNMutableNotificationContent()
+                    content.title = title
+                    content.body = message
+                    
+                    let date = Date().addingTimeInterval(5)
+                    let dateComp = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute, .second], from: date)
+                    
+                    let trigger = UNCalendarNotificationTrigger(dateMatching: dateComp, repeats: false)
+                    let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: trigger)
+                    
+                    self?.notificationCenter.add(request) { error in
+                        
+                            print("push notification!")
+                        if error != nil {
+                            print("Error: \(error.debugDescription)")
+                            return
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    private func getAllUsers() {
+        
+        guard let currentEmail = UserDefaults.standard.value(forKey: "email") as? String else {
+            return
+        }
+        
+        let safeEmail = DatabaseManager.safeEmail(emailAddress: currentEmail)
+        
+        if let loginObserver = loginObserver {
+            NotificationCenter.default.removeObserver(loginObserver)
+        }
+        
+        DatabaseManager.shared.getAllUsers { [weak self] result in
+            switch result {
+            case .success(let users):
+                let results: [SearchResultUser] = users.compactMap({
+                    guard let email = $0["email"], email != safeEmail, let name = $0["name"] else {
+                        return nil
+                    }
+                    return SearchResultUser(name: name, email: email)
+                })
+                self?.users = results
+                
+            case .failure(let error):
+                print("Failed to get users: \(error)")
+            }
+        }
+    }
+ 
     private func startListeningForConversations()  {
         guard let email = UserDefaults.standard.value(forKey: "email") as? String else {
             return
@@ -93,6 +164,7 @@ final class ConversationsViewController: UIViewController {
     }
     
     @objc private func didTapComposeButton() {
+        print("didTapComposeButton")
         let vc = NewConversationViewController()
         vc.completion = { [weak self] result in
             let currentConversations = self?.conversations
@@ -151,10 +223,10 @@ final class ConversationsViewController: UIViewController {
     
     private func validateAuth() {
         if FirebaseAuth.Auth.auth().currentUser == nil {
-            let vc = LoginViewController()
+            let vc = WelcomeViewController()
             let navi = UINavigationController(rootViewController: vc)
             navi.modalPresentationStyle = .fullScreen
-            navi.navigationBar.backgroundColor = .systemGray6
+            navi.navigationBar.backgroundColor = .white
             present(navi, animated: false)
         }
     }
@@ -193,7 +265,7 @@ extension ConversationsViewController: UITableViewDelegate, UITableViewDataSourc
     }
     
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        return 120
+        return 100
     }
     
     func tableView(_ tableView: UITableView, editingStyleForRowAt indexPath: IndexPath) -> UITableViewCell.EditingStyle {
@@ -202,20 +274,71 @@ extension ConversationsViewController: UITableViewDelegate, UITableViewDataSourc
     
     func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
         if editingStyle == .delete {
-            // begin delete
-            let conversationID = conversations[indexPath.row].id
-            tableView.beginUpdates()
-            self.conversations.remove(at: indexPath.row)
-            tableView.deleteRows(at: [indexPath], with: .left)
-            
-            DatabaseManager.shared.deleteConversation(conversationID: conversationID) { success in
-                if !success {
-                    // add model and row back and show error alert
-                    
-                }
+            showDeleteWarning(for: indexPath)
+        }
+    }
+    
+    func showDeleteWarning(for indexPath: IndexPath) {
+        //Create the alert controller and actions
+        let alert = UIAlertController(title: "Are you sure want to delete the conversation?", message: "", preferredStyle: .alert)
+
+        let cancelAction = UIAlertAction(title: "Cancel", style: .cancel, handler: nil)
+
+        let deleteAction = UIAlertAction(title: "Delete", style: .destructive) { [weak self] _ in
+            guard let strongSelf = self else {
+                return
             }
-            
-            tableView.endUpdates()
+            DispatchQueue.main.async {
+                // begin delete
+                let conversationID = strongSelf.conversations[indexPath.row].id
+                strongSelf.tableView.beginUpdates()
+                strongSelf.conversations.remove(at: indexPath.row)
+                strongSelf.tableView.deleteRows(at: [indexPath], with: .left)
+                
+                DatabaseManager.shared.deleteConversation(conversationID: conversationID) { success in
+                    if !success {
+                        // add model and row back and show error alert
+                        
+                    }
+                }
+                
+                self?.tableView.endUpdates()
+            }
+        }
+
+        //Add the actions to the alert controller
+        alert.addAction(cancelAction)
+        alert.addAction(deleteAction)
+
+        //Present the alert controller
+        present(alert, animated: true, completion: nil)
+    }
+    
+    func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
+        let header = tableView.dequeueReusableHeaderFooterView(
+            withIdentifier: "header")! as! ConversationsTableHeaderView
+        header.configure(with: users)
+        header.delegate = self
+        return header
+    }
+    
+    func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
+        150
+    }
+}
+
+extension ConversationsViewController: CollectionTableViewHeaderDelegate {
+    func collectionTableViewHeaderDidTapItem(with userData: SearchResultUser) {
+        if let targetConversation = conversations.first(where: {
+            $0.otherUserEmail == DatabaseManager.safeEmail(emailAddress: userData.email)
+        }) {
+            let vc = ChatViewController(with: targetConversation.otherUserEmail, id: targetConversation.id)
+            vc.isNewConversation = false
+            vc.title = targetConversation.name
+            vc.navigationItem.largeTitleDisplayMode = .never
+            navigationController?.pushViewController(vc, animated: true)
+        } else {
+            createNewConversation(result: userData)
         }
     }
 }

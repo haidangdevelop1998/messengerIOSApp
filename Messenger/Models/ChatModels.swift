@@ -16,6 +16,12 @@ struct Message: MessageType {
     public var kind: MessageKind
 }
 
+struct MessageDictionary {
+    var content: String
+    var description: String
+    var type: String
+}
+
 extension MessageKind {
     var messageKindString: String {
         switch self {

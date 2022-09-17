@@ -19,9 +19,17 @@ final class RegisterViewController: UIViewController {
         return scrollView
     }()
     
+    private let titleLabel: UILabel = {
+        let label = UILabel()
+        label.text = "Create new account"
+        label.textColor = UIColor.chatAppColor
+        label.font = UIFont.systemFont(ofSize: 30, weight: .semibold)
+        return label
+    }()
+    
     private let imageView: UIImageView = {
        let imageView = UIImageView()
-        imageView.image = UIImage(systemName: "person.circle")
+        imageView.image = UIImage(systemName: "person.fill")
         imageView.contentMode = .scaleAspectFit
         imageView.tintColor = .systemGray
         imageView.layer.masksToBounds = true
@@ -36,12 +44,14 @@ final class RegisterViewController: UIViewController {
         field.autocorrectionType = .no
         field.returnKeyType = .continue
         field.placeholder = "First Name"
-        field.layer.cornerRadius = 12
+        field.layer.cornerRadius = 25
         field.layer.borderWidth = 1
         field.layer.borderColor = UIColor.lightGray.cgColor
-        field.leftView = UIView(frame: CGRect(x: 0, y: 0, width: 5, height: 0))
+        field.leftView = UIView(frame: CGRect(x: 0, y: 0, width: 20, height: 0))
         field.leftViewMode = .always
-        field.backgroundColor = .secondarySystemBackground
+        field.rightView = UIView(frame: CGRect(x: 0, y: 0, width: 20, height: 0))
+        field.rightViewMode = .always
+        field.backgroundColor = .systemBackground
         return field
     }()
     
@@ -51,12 +61,14 @@ final class RegisterViewController: UIViewController {
         field.autocorrectionType = .no
         field.returnKeyType = .continue
         field.placeholder = "Last Name"
-        field.layer.cornerRadius = 12
+        field.layer.cornerRadius = 25
         field.layer.borderWidth = 1
         field.layer.borderColor = UIColor.lightGray.cgColor
-        field.leftView = UIView(frame: CGRect(x: 0, y: 0, width: 5, height: 0))
+        field.leftView = UIView(frame: CGRect(x: 0, y: 0, width: 20, height: 0))
         field.leftViewMode = .always
-        field.backgroundColor = .secondarySystemBackground
+        field.rightView = UIView(frame: CGRect(x: 0, y: 0, width: 20, height: 0))
+        field.rightViewMode = .always
+        field.backgroundColor = .systemBackground
         return field
     }()
     
@@ -65,13 +77,15 @@ final class RegisterViewController: UIViewController {
         field.autocapitalizationType = .none
         field.autocorrectionType = .no
         field.returnKeyType = .continue
-        field.placeholder = "Email Address"
-        field.layer.cornerRadius = 12
+        field.placeholder = "E-mail Address"
+        field.layer.cornerRadius = 25
         field.layer.borderWidth = 1
         field.layer.borderColor = UIColor.lightGray.cgColor
-        field.leftView = UIView(frame: CGRect(x: 0, y: 0, width: 5, height: 0))
+        field.leftView = UIView(frame: CGRect(x: 0, y: 0, width: 20, height: 0))
         field.leftViewMode = .always
-        field.backgroundColor = .secondarySystemBackground
+        field.rightView = UIView(frame: CGRect(x: 0, y: 0, width: 20, height: 0))
+        field.rightViewMode = .always
+        field.backgroundColor = .systemBackground
         return field
     }()
     
@@ -81,12 +95,14 @@ final class RegisterViewController: UIViewController {
         field.autocorrectionType = .no
         field.returnKeyType = .done
         field.placeholder = "Password"
-        field.layer.cornerRadius = 12
+        field.layer.cornerRadius = 25
         field.layer.borderWidth = 1
         field.layer.borderColor = UIColor.lightGray.cgColor
-        field.leftView = UIView(frame: CGRect(x: 0, y: 0, width: 5, height: 0))
+        field.leftView = UIView(frame: CGRect(x: 0, y: 0, width: 20, height: 0))
         field.leftViewMode = .always
-        field.backgroundColor = .secondarySystemBackground
+        field.rightView = UIView(frame: CGRect(x: 0, y: 0, width: 20, height: 0))
+        field.rightViewMode = .always
+        field.backgroundColor = .systemBackground
         field.isSecureTextEntry = true
         return field
     }()
@@ -94,17 +110,16 @@ final class RegisterViewController: UIViewController {
     private let registerButton: UIButton = {
         let registerButton = UIButton()
         registerButton.setTitle("Register", for: .normal)
-        registerButton.backgroundColor = .systemGreen
-        registerButton.layer.cornerRadius = 12
+        registerButton.backgroundColor = UIColor.chatAppColor
+        registerButton.layer.cornerRadius = 25
         registerButton.setTitleColor(.white, for: .normal)
         registerButton.layer.masksToBounds = true
-        registerButton.titleLabel?.font = .systemFont(ofSize: 20, weight: .bold)
+        registerButton.titleLabel?.font = .systemFont(ofSize: 20, weight: .semibold)
         return registerButton
     }()
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        title = "Register"
         view.backgroundColor = .systemBackground
         
         registerButton.addTarget(self, action: #selector(registerButtonTapped), for: .touchUpInside)
@@ -125,6 +140,7 @@ final class RegisterViewController: UIViewController {
         scrollView.addSubview(emailField)
         scrollView.addSubview(passwordField)
         scrollView.addSubview(registerButton)
+        scrollView.addSubview(titleLabel)
         
         imageView.isUserInteractionEnabled = true
         scrollView.isUserInteractionEnabled = true
@@ -140,14 +156,16 @@ final class RegisterViewController: UIViewController {
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         scrollView.frame = view.bounds
-        let size = scrollView.width/3
-        imageView.frame = CGRect(x: (scrollView.width-size)/2, y: 20, width: size, height: size)
+        let size = scrollView.width/4
+        titleLabel.frame = CGRect(x: 30, y: 50, width: scrollView.width-60, height: 45)
+        imageView.frame = CGRect(x: (scrollView.width-size)/2, y: titleLabel.bottom+30, width: size, height: size)
         imageView.layer.cornerRadius = imageView.width/2
-        firstNameField.frame = CGRect(x: 30, y: imageView.bottom+10, width: scrollView.width-60, height: 45)
-        lastNameField.frame = CGRect(x: 30, y: firstNameField.bottom+10, width: scrollView.width-60, height: 45)
-        emailField.frame = CGRect(x: 30, y: lastNameField.bottom+10, width: scrollView.width-60, height: 45)
-        passwordField.frame = CGRect(x: 30, y: emailField.bottom+10, width: scrollView.width-60, height: 45)
-        registerButton.frame = CGRect(x: 30, y: passwordField.bottom+10, width: scrollView.width-60, height: 45)
+        firstNameField.frame = CGRect(x: 30, y: imageView.bottom+30, width: scrollView.width-60, height: 50)
+        lastNameField.frame = CGRect(x: 30, y: firstNameField.bottom+20, width: scrollView.width-60, height: 50)
+        emailField.frame = CGRect(x: 30, y: lastNameField.bottom+20, width: scrollView.width-60, height: 50)
+        passwordField.frame = CGRect(x: 30, y: emailField.bottom+20, width: scrollView.width-60, height: 50)
+        registerButton.frame = CGRect(x: 30, y: passwordField.bottom+30, width: scrollView.width-100, height: 50)
+        registerButton.center.x = scrollView.center.x
     }
     
     @objc private func registerButtonTapped() {
@@ -193,7 +211,7 @@ final class RegisterViewController: UIViewController {
                 UserDefaults.standard.setValue(email, forKey: "email")
                 UserDefaults.standard.setValue("\(firstName) \(lastName)", forKey: "name")
                 
-                let chatUser = ChatAppUser(firstName: firstName, lastName: lastName, emailAddress: email)
+                let chatUser = ChatAppUser(firstName: firstName, lastName: lastName, emailAddress: email, isOnline: true)
                 DatabaseManager.shared.insertUser(with: chatUser) { success in
                     if success {
                         // upload image
@@ -214,8 +232,7 @@ final class RegisterViewController: UIViewController {
                     }
                 }
                 
-                // Dismiss Login view when login successfully
-                NotificationCenter.default.post(name: .didLoginNotification, object: nil)
+                strongSelf.navigationController?.dismiss(animated: true, completion: nil)
             }
         }
     }

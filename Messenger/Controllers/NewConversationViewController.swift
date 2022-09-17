@@ -40,7 +40,7 @@ final class NewConversationViewController: UIViewController {
         label.text = "No Results"
         label.textAlignment = .center
         label.font = .systemFont(ofSize: 21, weight: .medium)
-        label.textColor = .green
+        label.textColor = .systemGray
         return label
     }()
 
@@ -61,6 +61,7 @@ final class NewConversationViewController: UIViewController {
                                                             style: .done,
                                                             target: self,
                                                             action: #selector(dismissSelf))
+        searchUsers(query: "all")
         searchBar.becomeFirstResponder()
     }
     
@@ -77,6 +78,13 @@ final class NewConversationViewController: UIViewController {
 }
 
 extension NewConversationViewController: UISearchBarDelegate {
+    
+    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
+        if searchText.isEmpty {
+//            showAllUsers()
+            searchUsers(query: "all")
+        }
+    }
     
     func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
         guard let text = searchBar.text, !text.replacingOccurrences(of: " ", with: "").isEmpty else {
@@ -125,6 +133,10 @@ extension NewConversationViewController: UISearchBarDelegate {
         let results: [SearchResultUser] = users.filter({
             guard let email = $0["email"], email != safeEmail, let name = $0["name"]?.lowercased() else {
                 return false
+            }
+            
+            if term == "all" {
+                return true
             }
             
             return name.contains(term.lowercased())

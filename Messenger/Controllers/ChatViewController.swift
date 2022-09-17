@@ -41,7 +41,7 @@ final class ChatViewController: MessagesViewController {
         }
         
         let safeEmail = DatabaseManager.safeEmail(emailAddress: email)
-        return Sender(photoURL: "", senderId: safeEmail, displayName: "Me")
+        return Sender(photoURL: "", senderId: safeEmail, displayName: "")
     }
     
     init(with email: String, id: String?) {
@@ -56,10 +56,31 @@ final class ChatViewController: MessagesViewController {
     
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
+        messageInputBar.sendButton.setTitle("", for: .normal)
+        messageInputBar.sendButton.setTitleColor(UIColor.chatAppColor, for: .normal)
+        messageInputBar.sendButton.setImage(UIImage.localImage("send-icon", template: true), for: .normal)
+        messageInputBar.inputTextView.backgroundColor = .systemGray6
+        messageInputBar.inputTextView.layer.cornerRadius = 20
+        messageInputBar.inputTextView.layer.masksToBounds = true
+        messageInputBar.inputTextView.textContainerInset.left = 12
+        messageInputBar.inputTextView.placeholderLabelInsets.left = 16
         messageInputBar.inputTextView.becomeFirstResponder()
         
         if let conversationID = conversationID {
             listenForMessages(id: conversationID, shouldScrollToBottom: true)
+            // mark read latest message
+            guard let email = UserDefaults.standard.value(forKey: "email") as? String else {
+                return
+            }
+            
+            print("check message from: \(email)")
+            
+            let safeEmail = DatabaseManager.safeEmail(emailAddress: email)
+            DatabaseManager.shared.markLatestMessagesAsRead(currentEmail: safeEmail, conservationID: conversationID) { success in
+                if success {
+                    print("Mark read successfully!")
+                }
+            }
         }
     }
     
@@ -208,7 +229,6 @@ final class ChatViewController: MessagesViewController {
                 guard !messages.isEmpty else {
                     return
                 }
-                
                 self?.messages = messages
                 DispatchQueue.main.async {
                     self?.messagesCollectionView.reloadDataAndKeepOffset()
@@ -234,7 +254,6 @@ extension ChatViewController: UIImagePickerControllerDelegate, UINavigationContr
         picker.dismiss(animated: true, completion: nil)
         
         guard let messageId = createMessageId(),
-              let conversationID = conversationID,
               let name = self.title,
               let selfSender = selfSender else {
             return
@@ -265,11 +284,33 @@ extension ChatViewController: UIImagePickerControllerDelegate, UINavigationContr
                                           sentDate: Date(),
                                           kind: .photo(media))
                     
-                    DatabaseManager.shared.sendMessage(to: conversationID, otherUserEmail: strongSelf.otherUserEmail, name: name, newMessage: message) { success in
-                        if success {
-                            print("Send success")
-                        } else {
-                            print("Failed to send message")
+                    // Send Message
+                    if strongSelf.isNewConversation {
+                        // create new conversation in database
+                        DatabaseManager.shared.createNewConversation(with: strongSelf.otherUserEmail, name: name, firstMessage: message) { [weak self] success in
+                            if success {
+                                print("Send success")
+                                self?.isNewConversation = false
+                                let newConversationID = "conversation_\(messageId)"
+                                self?.conversationID = newConversationID
+                                self?.listenForMessages(id: newConversationID, shouldScrollToBottom: true)
+                                self?.messageInputBar.inputTextView.text = nil
+                            } else {
+                                print("Failed to send")
+                            }
+                        }
+                    } else {
+                        
+                        guard let conversationID = strongSelf.conversationID else {
+                            return
+                        }
+                        
+                        DatabaseManager.shared.sendMessage(to: conversationID, otherUserEmail: strongSelf.otherUserEmail, name: name, newMessage: message) { success in
+                            if success {
+                                print("Send success")
+                            } else {
+                                print("Failed to send message")
+                            }
                         }
                     }
                 case .failure(let error):
@@ -300,11 +341,34 @@ extension ChatViewController: UIImagePickerControllerDelegate, UINavigationContr
                                           sentDate: Date(),
                                           kind: .video(media))
                     
-                    DatabaseManager.shared.sendMessage(to: conversationID, otherUserEmail: strongSelf.otherUserEmail, name: name, newMessage: message) { success in
-                        if success {
-                            print("Send success")
-                        } else {
-                            print("Failed to send message")
+                    // Send Message
+                    if strongSelf.isNewConversation {
+                        // create new conversation in database
+                        
+                        DatabaseManager.shared.createNewConversation(with: strongSelf.otherUserEmail, name: name, firstMessage: message) { [weak self] success in
+                            if success {
+                                print("Send success")
+                                self?.isNewConversation = false
+                                let newConversationID = "conversation_\(messageId)"
+                                self?.conversationID = newConversationID
+                                self?.listenForMessages(id: newConversationID, shouldScrollToBottom: true)
+                                self?.messageInputBar.inputTextView.text = nil
+                            } else {
+                                print("Failed to send")
+                            }
+                        }
+                    } else {
+                        
+                        guard let conversationID = strongSelf.conversationID else {
+                            return
+                        }
+                        
+                        DatabaseManager.shared.sendMessage(to: conversationID, otherUserEmail: strongSelf.otherUserEmail, name: name, newMessage: message) { success in
+                            if success {
+                                print("Send success")
+                            } else {
+                                print("Failed to send message")
+                            }
                         }
                     }
                 case .failure(let error):
@@ -414,7 +478,7 @@ extension ChatViewController: MessagesDataSource, MessagesLayoutDelegate, Messag
     func backgroundColor(for message: MessageType, at indexPath: IndexPath, in messagesCollectionView: MessagesCollectionView) -> UIColor {
         let sender = message.sender
         if sender.senderId == selfSender?.senderId {
-            return .link
+            return UIColor.chatAppColor
         }
         return .secondarySystemBackground
     }
@@ -471,6 +535,8 @@ extension ChatViewController: MessagesDataSource, MessagesLayoutDelegate, Messag
             }
         }
     }
+    
+    
 }
 
 extension ChatViewController: MessageCellDelegate {

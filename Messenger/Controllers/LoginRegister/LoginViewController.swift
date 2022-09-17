@@ -22,12 +22,27 @@ final class LoginViewController: UIViewController {
         return scrollView
     }()
     
-    private let imageView: UIImageView = {
-       let imageView = UIImageView()
-        imageView.image = UIImage(named: "logo")
-        imageView.contentMode = .scaleAspectFit
-        
-        return imageView
+    private let titleLabel: UILabel = {
+        let label = UILabel()
+        label.text = "Sign In"
+        label.font = UIFont.systemFont(ofSize: 30, weight: .semibold)
+        return label
+    }()
+    
+    private let divideLabel: UILabel = {
+        let label = UILabel()
+        label.text = "OR"
+        label.font = UIFont.systemFont(ofSize: 15, weight: .semibold)
+        label.textAlignment = .center
+        return label
+    }()
+    
+    private let forgotPassButton: UIButton = {
+        let button = UIButton()
+        button.setTitle("Forgot Password?", for: .normal)
+        button.setTitleColor(UIColor.chatAppColor, for: .normal)
+        button.titleLabel?.font = .systemFont(ofSize: 12, weight: .semibold)
+        return button
     }()
     
     private let emailField: UITextField = {
@@ -35,13 +50,15 @@ final class LoginViewController: UIViewController {
         field.autocapitalizationType = .none
         field.autocorrectionType = .no
         field.returnKeyType = .continue
-        field.placeholder = "Email Address"
-        field.layer.cornerRadius = 12
+        field.placeholder = "E-mail"
+        field.layer.cornerRadius = 25
         field.layer.borderWidth = 1
         field.layer.borderColor = UIColor.lightGray.cgColor
-        field.leftView = UIView(frame: CGRect(x: 0, y: 0, width: 5, height: 0))
+        field.leftView = UIView(frame: CGRect(x: 0, y: 0, width: 20, height: 0))
         field.leftViewMode = .always
-        field.backgroundColor = .secondarySystemBackground
+        field.rightView = UIView(frame: CGRect(x: 0, y: 0, width: 20, height: 0))
+        field.rightViewMode = .always
+        field.backgroundColor = .systemBackground
         return field
     }()
     
@@ -51,36 +68,39 @@ final class LoginViewController: UIViewController {
         field.autocorrectionType = .no
         field.returnKeyType = .done
         field.placeholder = "Password"
-        field.layer.cornerRadius = 12
+        field.layer.cornerRadius = 25
         field.layer.borderWidth = 1
         field.layer.borderColor = UIColor.lightGray.cgColor
-        field.leftView = UIView(frame: CGRect(x: 0, y: 0, width: 5, height: 0))
+        field.leftView = UIView(frame: CGRect(x: 0, y: 0, width: 20, height: 0))
+        field.rightView = UIView(frame: CGRect(x: 0, y: 0, width: 20, height: 0))
         field.leftViewMode = .always
-        field.backgroundColor = .secondarySystemBackground
+        field.rightView = UIView(frame: CGRect(x: 0, y: 0, width: 20, height: 0))
+        field.rightViewMode = .always
+        field.backgroundColor = .systemBackground
         field.isSecureTextEntry = true
         return field
     }()
     
     private let loginButton: UIButton = {
         let loginButton = UIButton()
-        loginButton.setTitle("Login", for: .normal)
-        loginButton.backgroundColor = .link
-        loginButton.layer.cornerRadius = 12
+        loginButton.setTitle("Log In", for: .normal)
+        loginButton.backgroundColor = UIColor.chatAppColor
+        loginButton.layer.cornerRadius = 10
         loginButton.setTitleColor(.white, for: .normal)
         loginButton.layer.masksToBounds = true
-        loginButton.titleLabel?.font = .systemFont(ofSize: 20, weight: .bold)
+        loginButton.titleLabel?.font = .systemFont(ofSize: 20, weight: .semibold)
         return loginButton
     }()
 
     private let facebookLoginButton: FBLoginButton = {
         let facebookLoginButton = FBLoginButton()
         facebookLoginButton.permissions = ["email", "public_profile"]
+        facebookLoginButton.titleLabel?.font = .systemFont(ofSize: 15, weight: .semibold)
         return facebookLoginButton
     }()
     
     private let googleLoginButton: GIDSignInButton = {
         let googleLoginButton = GIDSignInButton()
-        
         return googleLoginButton
     }()
     
@@ -97,13 +117,8 @@ final class LoginViewController: UIViewController {
             strongSelf.navigationController?.dismiss(animated: true, completion: nil)
         })
         
-        title = "Login"
         view.backgroundColor = .systemBackground
         
-        navigationItem.rightBarButtonItem = UIBarButtonItem(title: "Register",
-                                                        style: .done,
-                                                        target: self,
-                                                        action: #selector(didTapRegister))
         loginButton.addTarget(self, action: #selector(loginButtonTapped), for: .touchUpInside)
         googleLoginButton.addTarget(self, action: #selector(googleLogin), for: .touchUpInside)
         
@@ -115,15 +130,21 @@ final class LoginViewController: UIViewController {
         
         // Add Subviews
         view.addSubview(scrollView)
-        scrollView.addSubview(imageView)
         scrollView.addSubview(emailField)
         scrollView.addSubview(passwordField)
         scrollView.addSubview(loginButton)
         scrollView.addSubview(facebookLoginButton)
         scrollView.addSubview(googleLoginButton)
-        
+        scrollView.addSubview(titleLabel)
+        scrollView.addSubview(forgotPassButton)
+        scrollView.addSubview(divideLabel)
+
         emailField.becomeFirstResponder()
         
+        forgotPassButton.addTarget(self, action: #selector(didTapForgotPassword), for: .touchUpInside)
+        
+        let backButton = UIBarButtonItem(title: "", style: .plain, target: self, action: nil)
+        navigationItem.backBarButtonItem = backButton
     }
     
     deinit {
@@ -135,13 +156,24 @@ final class LoginViewController: UIViewController {
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         scrollView.frame = view.bounds
-        let size = scrollView.width/5
-        imageView.frame = CGRect(x: (scrollView.width-size)/2, y: 20, width: size, height: size)
-        emailField.frame = CGRect(x: 30, y: imageView.bottom+10, width: scrollView.width-60, height: 45)
-        passwordField.frame = CGRect(x: 30, y: emailField.bottom+10, width: scrollView.width-60, height: 45)
-        loginButton.frame = CGRect(x: 30, y: passwordField.bottom+10, width: scrollView.width-60, height: 45)
-        facebookLoginButton.frame = CGRect(x: 30, y: loginButton.bottom+10, width: scrollView.width-60, height: 45)
-        googleLoginButton.frame = CGRect(x: 30, y: facebookLoginButton.bottom+10, width: scrollView.width-60, height: 45)
+        titleLabel.frame = CGRect(x: 30, y: 50, width: scrollView.width-60, height: 45)
+        emailField.frame = CGRect(x: 30, y: titleLabel.bottom+50, width: scrollView.width-60, height: 50)
+        passwordField.frame = CGRect(x: 30, y: emailField.bottom+20, width: scrollView.width-60, height: 50)
+        forgotPassButton.frame = CGRect(x: 30, y: passwordField.bottom+10, width: scrollView.width-60, height: 45)
+        forgotPassButton.contentHorizontalAlignment = .right
+        loginButton.frame = CGRect(x: 30, y: forgotPassButton.bottom+10, width: scrollView.width-100, height: 50)
+        divideLabel.frame = CGRect(x: 30, y: loginButton.bottom+30, width: scrollView.width-60, height: 45)
+        facebookLoginButton.frame = CGRect(x: 30, y: divideLabel.bottom+20, width: scrollView.width-100, height: 50)
+        googleLoginButton.frame = CGRect(x: 30, y: facebookLoginButton.bottom+20, width: scrollView.width-100, height: 50)
+        
+        loginButton.center.x = scrollView.center.x
+        facebookLoginButton.center.x = scrollView.center.x
+        googleLoginButton.center.x = scrollView.center.x
+    }
+    
+    @objc func didTapForgotPassword() {
+        let vc = ForgotPasswordViewController()
+        navigationController?.pushViewController(vc, animated: true)
     }
     
     @objc private func loginButtonTapped() {
@@ -170,6 +202,7 @@ final class LoginViewController: UIViewController {
             
             guard authResult != nil, error == nil else {
                 print("Failed to login with email \(email).")
+                strongSelf.alertUserLoginFailed()
                 return
             }
             
@@ -185,9 +218,19 @@ final class LoginViewController: UIViewController {
                     }
                     
                     UserDefaults.standard.setValue("\(firstName) \(lastName)", forKey: "name")
+                    UserDefaults.standard.setValue(firstName, forKey: "first_name")
+                    UserDefaults.standard.setValue(lastName, forKey: "last_name")
                     
                 case .failure(let error):
                     print("Failed to read data with error: \(error)")
+                }
+            }
+            
+            
+            // Update user online status
+            DatabaseManager.shared.changeUserOnlineStatus(with: safeEmail, status: true) { success in
+                if success {
+                    print("Change status successfully")
                 }
             }
             
@@ -204,10 +247,10 @@ final class LoginViewController: UIViewController {
         present(alert, animated: true)
     }
     
-    @objc func didTapRegister() {
-        let vc = RegisterViewController()
-        
-        navigationController?.pushViewController(vc, animated: true)
+    private func alertUserLoginFailed() {
+        let alert = UIAlertController(title: "Woops", message: "Failed to login! Please check your email or password.", preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "Dismiss", style: .cancel))
+        present(alert, animated: true)
     }
     
     @objc func googleLogin() {
@@ -215,6 +258,9 @@ final class LoginViewController: UIViewController {
         
         // Create Google Sign In configuration object.
         let config = GIDConfiguration(clientID: clientID)
+        
+        // show spinner when login
+        spinner.show(in: view)
         
         // Start the sign in flow!
         GIDSignIn.sharedInstance.signIn(with: config, presenting: self) { user, error in
@@ -232,13 +278,15 @@ final class LoginViewController: UIViewController {
             
             UserDefaults.standard.setValue(email, forKey: "email")
             UserDefaults.standard.setValue("\(firstName) \(lastName)", forKey: "name")
+            UserDefaults.standard.setValue(firstName, forKey: "first_name")
+            UserDefaults.standard.setValue(lastName, forKey: "last_name")
             
             // check exists user
             DatabaseManager.shared.checkUserExists(with: email) { exists in
                 if !exists {
                     
                     // insert user to database
-                    let chatUser = ChatAppUser(firstName: firstName, lastName: lastName, emailAddress: email)
+                    let chatUser = ChatAppUser(firstName: firstName, lastName: lastName, emailAddress: email, isOnline: true)
                     DatabaseManager.shared.insertUser(with: chatUser) { success in
                         if success {
                             guard let url = user?.profile?.imageURL(withDimension: 200) else {
@@ -280,7 +328,12 @@ final class LoginViewController: UIViewController {
             let credential = GoogleAuthProvider.credential(withIDToken: idToken,
                                                            accessToken: authentication.accessToken)
             
-            FirebaseAuth.Auth.auth().signIn(with: credential) { authResult, error in
+            FirebaseAuth.Auth.auth().signIn(with: credential) { [weak self ]authResult, error in
+                
+                // dismiss spinner
+                DispatchQueue.main.async {
+                    self?.spinner.dismiss()
+                }
                 
                 guard authResult != nil, error == nil else {
                     print("Google credential login failed.")
@@ -288,6 +341,15 @@ final class LoginViewController: UIViewController {
                 }
                 
                 print("Successfully logged user in.")
+                
+                // Update user online status
+                let safeEmail = DatabaseManager.safeEmail(emailAddress: email)
+                DatabaseManager.shared.changeUserOnlineStatus(with: safeEmail, status: true) { success in
+                    if success {
+                        print("Change status successfully")
+                    }
+                }
+                
                 NotificationCenter.default.post(name: .didLoginNotification, object: nil)
             }
         }
@@ -319,6 +381,9 @@ extension LoginViewController: LoginButtonDelegate {
             return
         }
         
+        // show spinner when login
+        spinner.show(in: view)
+        
         // Create graph request to get information(email, name) from Facebook
         let facebookRequest = FBSDKLoginKit.GraphRequest(graphPath: "me", parameters: ["fields": "email, first_name, last_name, picture.type(large)"], tokenString: token, version: nil, httpMethod: .get)
         
@@ -342,12 +407,14 @@ extension LoginViewController: LoginButtonDelegate {
             
             UserDefaults.standard.setValue(email, forKey: "email")
             UserDefaults.standard.setValue("\(firstName) \(lastName)", forKey: "name")
+            UserDefaults.standard.setValue(firstName, forKey: "first_name")
+            UserDefaults.standard.setValue(lastName, forKey: "last_name")
             
             // check exists user
             DatabaseManager.shared.checkUserExists(with: email) { exists in
                 if !exists {
                     // insert user to database
-                    let chatUser = ChatAppUser(firstName: firstName, lastName: lastName, emailAddress: email)
+                    let chatUser = ChatAppUser(firstName: firstName, lastName: lastName, emailAddress: email, isOnline: true)
                     DatabaseManager.shared.insertUser(with: chatUser) { success in
                         if success {
                             guard let url = URL(string: pictureUrl) else {
@@ -381,7 +448,12 @@ extension LoginViewController: LoginButtonDelegate {
             let credential = FacebookAuthProvider.credential(withAccessToken: token)
             
             // singin
-            FirebaseAuth.Auth.auth().signIn(with: credential) { authResult, error in
+            FirebaseAuth.Auth.auth().signIn(with: credential) { [weak self] authResult, error in
+                
+                // dismiss spinner
+                DispatchQueue.main.async {
+                    self?.spinner.dismiss()
+                }
                 
                 guard authResult != nil, error == nil else {
                     print("Facebook credential login failed, MFA may be need.")
@@ -389,6 +461,14 @@ extension LoginViewController: LoginButtonDelegate {
                 }
                 
                 print("Successfully logged user in.")
+                
+                // Update user online status
+                let safeEmail = DatabaseManager.safeEmail(emailAddress: email)
+                DatabaseManager.shared.changeUserOnlineStatus(with: safeEmail, status: true) { success in
+                    if success {
+                        print("Change status successfully")
+                    }
+                }
                 
                 // Dismiss Login view when login successfully
                 NotificationCenter.default.post(name: .didLoginNotification, object: nil)
