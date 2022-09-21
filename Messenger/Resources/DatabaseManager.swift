@@ -231,7 +231,7 @@ extension DatabaseManager {
                 "latest_message": [
                     "date": dateString,
                     "message": message.type == "text" ? "You: \(message.description)" : "You \(message.description)",
-                    "is_read": false
+                    "is_read": true
                 ]
             ]
             
@@ -544,7 +544,6 @@ extension DatabaseManager {
                                 return
                             }
                             
-                            // check if other user is on the private chat
                             let updateValue: [String: Any] = [
                                 "date": dateString,
                                 "message": message.type == "text" ? message.description : "\(currentName) \(message.description)",
@@ -706,6 +705,29 @@ extension DatabaseManager {
             
             completion(.failure(DatabaseError.failedToFetch))
             return
+        }
+    }
+}
+
+extension DatabaseManager {
+    
+    public func updateInfoUser(with email: String, options: ChangeInfoUser, value: String, completion: @escaping (Bool) -> Void) {
+        let safeEmail = DatabaseManager.safeEmail(emailAddress: email)
+        
+        var child: String = ""
+        switch options {
+        case .firstName:
+            child = "firstName"
+        case .lastName:
+            child = "lastName"
+        }
+        database.child("\(safeEmail)/\(child)").setValue(value) { error, _ in
+            guard error == nil else {
+                print("Failed to write to database")
+                completion(false)
+                return
+            }
+            completion(true)
         }
     }
 }

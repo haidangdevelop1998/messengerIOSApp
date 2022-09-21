@@ -139,7 +139,6 @@ final class ChatViewController: MessagesViewController {
             }
             
             guard let messageId = strongSelf.createMessageId(),
-                  let conversationID = strongSelf.conversationID,
                   let name = strongSelf.title,
                   let selfSender = strongSelf.selfSender else {
                 return
@@ -154,12 +153,32 @@ final class ChatViewController: MessagesViewController {
                                   messageId: messageId,
                                   sentDate: Date(),
                                   kind: .location(location))
-            
-            DatabaseManager.shared.sendMessage(to: conversationID, otherUserEmail: strongSelf.otherUserEmail, name: name, newMessage: message) { success in
-                if success {
-                    print("Send success")
-                } else {
-                    print("Failed to send message")
+
+            // Send Message
+            if strongSelf.isNewConversation {
+                // create new conversation in database
+                DatabaseManager.shared.createNewConversation(with: strongSelf.otherUserEmail, name: name, firstMessage: message) { [weak self] success in
+                    if success {
+                        print("Send success")
+                        self?.isNewConversation = false
+                        let newConversationID = "conversation_\(messageId)"
+                        self?.conversationID = newConversationID
+                        self?.listenForMessages(id: newConversationID, shouldScrollToBottom: true)
+                        self?.messageInputBar.inputTextView.text = nil
+                    } else {
+                        print("Failed to send")
+                    }
+                }
+            } else {
+                guard let conversationID = strongSelf.conversationID else {
+                    return
+                }
+                DatabaseManager.shared.sendMessage(to: conversationID, otherUserEmail: strongSelf.otherUserEmail, name: name, newMessage: message) { success in
+                    if success {
+                        print("Send success")
+                    } else {
+                        print("Failed to send message")
+                    }
                 }
             }
         }

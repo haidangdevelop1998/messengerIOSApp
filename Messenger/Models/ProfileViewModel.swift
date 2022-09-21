@@ -10,6 +10,11 @@ import UIKit
 
 enum ProfileViewModelType {
     case settings, logout, detail
+    case switchOption
+}
+
+enum ChangeInfoUser {
+    case firstName, lastName
 }
 
 struct ProfileViewModel {
@@ -17,7 +22,8 @@ struct ProfileViewModel {
     let title: String
     let value: String?
     let icon: IconProfile?
-    let handler: (() -> Void)?
+    let handler: ((_ value: String) -> Void)?
+    var isOn: Bool?
 }
 
 struct IconProfile {

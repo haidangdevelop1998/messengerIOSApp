@@ -259,9 +259,6 @@ final class LoginViewController: UIViewController {
         // Create Google Sign In configuration object.
         let config = GIDConfiguration(clientID: clientID)
         
-        // show spinner when login
-        spinner.show(in: view)
-        
         // Start the sign in flow!
         GIDSignIn.sharedInstance.signIn(with: config, presenting: self) { user, error in
             
@@ -327,6 +324,9 @@ final class LoginViewController: UIViewController {
             
             let credential = GoogleAuthProvider.credential(withIDToken: idToken,
                                                            accessToken: authentication.accessToken)
+            
+            // show spinner when login
+            self.spinner.show(in: self.view)
             
             FirebaseAuth.Auth.auth().signIn(with: credential) { [weak self ]authResult, error in
                 

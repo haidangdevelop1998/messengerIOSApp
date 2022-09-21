@@ -210,6 +210,8 @@ final class RegisterViewController: UIViewController {
                 // cache value
                 UserDefaults.standard.setValue(email, forKey: "email")
                 UserDefaults.standard.setValue("\(firstName) \(lastName)", forKey: "name")
+                UserDefaults.standard.setValue(firstName, forKey: "first_name")
+                UserDefaults.standard.setValue(lastName, forKey: "last_name")
                 
                 let chatUser = ChatAppUser(firstName: firstName, lastName: lastName, emailAddress: email, isOnline: true)
                 DatabaseManager.shared.insertUser(with: chatUser) { success in
@@ -231,7 +233,7 @@ final class RegisterViewController: UIViewController {
                         }
                     }
                 }
-                
+                NotificationCenter.default.post(name: .didLoginNotification, object: nil)
                 strongSelf.navigationController?.dismiss(animated: true, completion: nil)
             }
         }

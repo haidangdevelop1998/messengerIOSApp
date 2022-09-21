@@ -32,7 +32,7 @@ class ConversationTableViewCell: UITableViewCell {
         let label = UILabel()
         label.font = .systemFont(ofSize: 16, weight: .regular)
         label.numberOfLines = 1
-        label.textColor = .systemGray
+//        label.textColor = .systemGray
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()
@@ -40,7 +40,7 @@ class ConversationTableViewCell: UITableViewCell {
     private let sendDateLabel: UILabel = {
         let label = UILabel()
         label.font = .systemFont(ofSize: 16, weight: .regular)
-        label.textColor = .systemGray
+//        label.textColor = .systemGray
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()
@@ -80,6 +80,11 @@ class ConversationTableViewCell: UITableViewCell {
         setupLayout()
     }
     
+    override func updateConfiguration(using state: UICellConfigurationState) {
+        self.userMessageLabel.font = .systemFont(ofSize: 16, weight: .regular)
+        self.sendDateLabel.font = .systemFont(ofSize: 16, weight: .regular)
+    }
+    
     private func setupLayout() {
         userImageView.leftAnchor.constraint(equalTo: contentView.leftAnchor, constant: 10).isActive = true
         userImageView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 10).isActive = true
@@ -111,10 +116,10 @@ class ConversationTableViewCell: UITableViewCell {
         userNameLabel.text = model.name
         userMessageLabel.text = model.latestMessage.message
         if !model.latestMessage.isRead {
-            userMessageLabel.textColor = .black
-            userMessageLabel.font = .systemFont(ofSize: 16, weight: .semibold)
-            sendDateLabel.textColor = .black
-            sendDateLabel.font = .systemFont(ofSize: 16, weight: .semibold)
+            DispatchQueue.main.async {
+                self.userMessageLabel.font = .systemFont(ofSize: 16, weight: .semibold)
+                self.sendDateLabel.font = .systemFont(ofSize: 16, weight: .semibold)
+            }
         }
         let dateString = model.latestMessage.date
         guard let date = ChatViewController.dateFormatter.date(from: dateString) else {

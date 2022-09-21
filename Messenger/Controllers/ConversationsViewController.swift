@@ -42,7 +42,6 @@ final class ConversationsViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        
         navigationController?.addCustomBottomLine(color: .systemGray5, height: 1)
         navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .compose, target: self, action: #selector(didTapComposeButton))
         navigationItem.rightBarButtonItem?.tintColor = UIColor.chatAppColor
@@ -64,6 +63,16 @@ final class ConversationsViewController: UIViewController {
             strongSelf.getAllUsers()
             strongSelf.startListeningForConversations()
         })
+    }
+    
+    override func viewDidLayoutSubviews() {
+        tableView.frame = view.bounds
+        noConversationLabel.frame = CGRect(x: 10, y: (view.height-100)/2, width: view.width-20, height: 100)
+    }
+    
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        validateAuth()
     }
     
     private func pushNotification(title: String, message: String) {
@@ -209,16 +218,6 @@ final class ConversationsViewController: UIViewController {
                 self?.navigationController?.pushViewController(vc, animated: true)
             }
         }
-    }
-    
-    override func viewDidLayoutSubviews() {
-        tableView.frame = view.bounds
-        noConversationLabel.frame = CGRect(x: 10, y: (view.height-100)/2, width: view.width-20, height: 100)
-    }
-    
-    override func viewDidAppear(_ animated: Bool) {
-        super.viewDidAppear(animated)
-        validateAuth()
     }
     
     private func validateAuth() {

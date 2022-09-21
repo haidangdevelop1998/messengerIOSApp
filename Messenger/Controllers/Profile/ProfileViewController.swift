@@ -17,6 +17,8 @@ final class ProfileViewController: UIViewController {
     
     var data = [ProfileViewModel]()
     
+    private var urlProfileImage: URL?
+    
     private var loginObserver: NSObjectProtocol?
 
     override func viewDidLoad() {
@@ -26,7 +28,7 @@ final class ProfileViewController: UIViewController {
         
         initProfile()
         
-        data.append(ProfileViewModel(viewModelType: .logout, title: "Log Out", value: nil, icon: IconProfile(image: UIImage(systemName: "square.and.arrow.up"), color: UIColor.systemRed), handler: { [weak self] in
+        data.append(ProfileViewModel(viewModelType: .logout, title: "Log Out", value: nil, icon: IconProfile(image: UIImage(systemName: "square.and.arrow.up"), color: UIColor.systemRed), handler: { [weak self] _ in
             
             guard let strongSelf = self else { return }
             
@@ -85,11 +87,8 @@ final class ProfileViewController: UIViewController {
         tableView.separatorStyle = .none
         
         loginObserver = NotificationCenter.default.addObserver(forName: .didLoginNotification, object: nil, queue: .main, using: { [weak self] _ in
-            guard let strongSelf = self else {
-                return
-            }
             self?.tabBarController?.selectedIndex = 0
-            strongSelf.updateProfile()
+//            strongSelf.updateProfile()
         })
     }
     
@@ -100,18 +99,34 @@ final class ProfileViewController: UIViewController {
         
         print("start updating profile")
         
-//        initProfile()
-//        tableView.reloadData()
+        guard let email = UserDefaults.standard.value(forKey: "email") as? String else {
+            return
+        }
+        
+        let safeEmail = DatabaseManager.safeEmail(emailAddress: email)
+        let fileName = safeEmail + "_profile_picture.png"
+        let path = "images/" + fileName
+        
+        StorageManager.shared.downloadURL(for: path) { [weak self] result in
+            switch result {
+            case .success(let url):
+                DispatchQueue.main.async {
+                    self?.urlProfileImage = url
+                }
+            case .failure(let error):
+                print("Failed to get download url: \(error)")
+            }
+        }
     }
     
     private func initProfile() {
         
-        data.append(ProfileViewModel(viewModelType: .settings, title: "Account Details", value: nil, icon: IconProfile(image: UIImage(systemName: "person.crop.circle"), color: UIColor.chatAppColor), handler: { [weak self] in
+        data.append(ProfileViewModel(viewModelType: .settings, title: "Account Details", value: nil, icon: IconProfile(image: UIImage(systemName: "person.crop.circle"), color: UIColor.chatAppColor), handler: { [weak self] _ in
             let vc = EditProfileViewController()
             self?.navigationController?.pushViewController(vc, animated: true)
         }))
         data.append(ProfileViewModel(viewModelType: .settings, title: "Settings", value: nil, icon: IconProfile(image: UIImage(systemName: "gearshape"), color: UIColor.systemGray), handler: nil))
-        data.append(ProfileViewModel(viewModelType: .settings, title: "Dark Mode", value: nil, icon: IconProfile(image: UIImage(systemName: "moon.circle.fill"), color: UIColor.systemGray), handler: nil))
+        data.append(ProfileViewModel(viewModelType: .switchOption, title: "Dark Mode", value: nil, icon: IconProfile(image: UIImage(systemName: "moon.circle.fill"), color: UIColor.systemGray), handler: nil, isOn: false))
     }
     
     private func createTableHeader() -> UIView? {
@@ -184,17 +199,34 @@ extension ProfileViewController: UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let viewModel = data[indexPath.row]
         let cell = tableView.dequeueReusableCell(withIdentifier: ProfileTableViewCell.identifier, for: indexPath) as! ProfileTableViewCell
+        
+        cell.delegate = self
         cell.setup(with: viewModel)
         return cell
     }
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
-        data[indexPath.row].handler?()
+        data[indexPath.row].handler?("")
     }
     
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         50
     }
     
+}
+
+extension ProfileViewController: SwitchTableViewCellDelegate {
+    func didChangeSwitch(isOn: Bool) {
+        let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene
+        let window = windowScene?.windows.first
+
+        if isOn {
+            window?.overrideUserInterfaceStyle = .dark
+            return
+        }
+
+        window?.overrideUserInterfaceStyle = .light
+        return
+    }
 }

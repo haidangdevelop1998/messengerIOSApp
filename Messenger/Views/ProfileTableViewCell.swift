@@ -7,7 +7,13 @@
 
 import UIKit
 
+protocol SwitchTableViewCellDelegate: AnyObject {
+    func didChangeSwitch(isOn: Bool)
+}
+
 class ProfileTableViewCell: UITableViewCell {
+    
+    weak var delegate: SwitchTableViewCellDelegate?
 
     static let identifier = "ProfileTableViewCell"
     
@@ -15,6 +21,13 @@ class ProfileTableViewCell: UITableViewCell {
         let view = UIImageView()
         view.isHidden = false
         return view
+    }()
+    
+    private let mySwitch: UISwitch = {
+        let mySwitch = UISwitch()
+        mySwitch.onTintColor = .systemGreen
+        mySwitch.sizeToFit()
+        return mySwitch
     }()
     
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
@@ -53,6 +66,15 @@ class ProfileTableViewCell: UITableViewCell {
             label.text = viewModel.value
             label.textAlignment = .right
             accessoryView = label
+        case .switchOption:
+            mySwitch.isOn = viewModel.isOn ?? true
+            mySwitch.addTarget(self, action: #selector(didTapSwitch), for: .touchUpInside)
+            accessoryView = mySwitch
+            return
         }
+    }
+    
+    @objc func didTapSwitch() {
+        delegate?.didChangeSwitch(isOn: mySwitch.isOn)
     }
 }
